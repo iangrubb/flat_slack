@@ -17,7 +17,9 @@ defmodule FlatSlack.MixProject do
   # Run "mix help deps" for examples and options.
   defp deps do
     [
-      {:poison, "~> 3.1"}
+      {:poison, "~> 3.1"},
+      {:ecto, "~> 2.2.11"},
+      {:sqlite_ecto2, "~> 2.2"}
     ]
   end
 end
