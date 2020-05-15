@@ -18,7 +18,7 @@ defmodule FlatSlackClient.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :sqlite_ecto2, :ecto],
+      applications: [:logger, :sqlite_ecto2, :ecto],
       mod: {FlatSlackClient, []}
     ]
   end

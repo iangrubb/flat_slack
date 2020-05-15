@@ -6,7 +6,15 @@ defmodule FlatSlackClient.Interface do
 
     alias  Ratatouille.Runtime.{Command, Subscription}
 
-    alias FlatSlackClient.Messenger
+    alias FlatSlackClient.{
+        Messenger,
+        ConnectionLog
+    }
+
+    alias FlatSlackClient.Repo, as: ClientRepo
+    alias FlatSlackServer.Repo, as: ServerRepo
+
+    alias FlatSlackServer.Models.Chatroom
 
     alias FlatSlackClient.Views.{
         Landing,
@@ -16,6 +24,7 @@ defmodule FlatSlackClient.Interface do
     alias FlatSlackClient.Updates
 
     alias Ratatouille.Window
+
 
     import Ratatouille.Constants, only: [key: 1]
 
@@ -30,14 +39,32 @@ defmodule FlatSlackClient.Interface do
         {:ok, width} = Window.fetch(:width)
         {:ok, height} = Window.fetch(:height)
         {
-            %{
-                connected: false,
-                landing_ui: %{input_field: "", error_message: ""},
-                chatroom_ui: %{message_cursor: 0, message_field: ""},
+            %{  
+                dimensions: {width, height},
+
+                landing_ui:
+                    %{input_field: "", error_message: "", input_cursor: 0, input_options:
+                        [
+                        {"Create a New Chatroom", :new_chatroom},
+                        {"Restart a Chatroom", :restart_chatroom},
+                        {"Connect to New Chatroom", :new_remote_connection},
+                        {"Connect to Visited Chatroom", :reestablish_connection}
+                        ]
+                    },
+                past_connections: nil,
+                owned_chatrooms: nil,
+
+                connection_choice: nil,
+
+                remote_port: nil,
+
                 chatroom_data: nil,
-                dimensions: {width, height}
+                chatroom_ui: %{message_cursor: 0, message_field: ""}
             },
-            Command.new(fn -> Messenger.establish_connection() end, :server_init)
+            Command.new(fn ->
+                ServerRepo.insert(%Chatroom{name: "Beef House"})
+                {ClientRepo.all(ConnectionLog), ServerRepo.all(Chatroom)}
+            end, :initialize_client)
         }
     end 
 
@@ -47,8 +74,9 @@ defmodule FlatSlackClient.Interface do
 
     def update(model, msg) do
         case {model, msg} do
+            { _ , {:initialize_client, {past_connections, owned_chatrooms}}} ->
+                %{model | past_connections: past_connections, owned_chatrooms: owned_chatrooms}
             { _, :check_messenger } ->
-                
                 case Messenger.get_message() do
                     :none ->
                         model
@@ -56,8 +84,10 @@ defmodule FlatSlackClient.Interface do
                         Updates.server(model, server_message)
                 end
             { _ , {:resize, event}} -> %{ model | dimensions: {event.w, event.h}}
-            {%{chatroom_data: nil, connected: false}, {:event, _event}} -> model
-            {%{chatroom_data: nil, connected: true}, {:event, event} } ->
+
+            {%{remote_port: nil}, {:event, event}} -> Updates.landing(model, event)
+
+            {%{chatroom_data: nil, remote_port: _}, {:event, event} } ->
                 submit =
                     fn name ->
                         updated_model = %{ model | landing_ui: %{ model.landing_ui | input_field: ""}}
@@ -85,7 +115,7 @@ defmodule FlatSlackClient.Interface do
     def render(model) do
         
         case model.chatroom_data do
-            nil -> Landing.render(model.dimensions, model.landing_ui, model.connected)
+            nil -> Landing.render(model.dimensions, model.landing_ui, model.remote_port, model.connection_choice)
             _ -> ChatRoom.render(model.dimensions, model.chatroom_ui, model.chatroom_data)
         end
         

@@ -96,6 +96,43 @@ defmodule FlatSlackClient.Updates do
         end
 
     end
+
+
+    def landing(model, event) do
+
+        case {model.connection_choice, event} do
+            {_ , %{key: @ctrl_e}} ->
+                # Undo connection_choice and clear fields.
+                model
+            {nil, event} ->
+                # Make conncetion_choice
+                case event do
+                    %{key: @arrow_up} ->
+                        new_cursor = if (model.landing_ui.input_cursor == 0), do: length(model.landing_ui.input_options) - 1, else: new_cursor =  model.landing_ui.input_cursor - 1
+                        %{ model | landing_ui: %{ model.landing_ui | input_cursor: new_cursor}}
+                    %{key: @arrow_down} ->
+                        new_cursor = rem(model.landing_ui.input_cursor + 1, length(model.landing_ui.input_options))
+                        %{ model | landing_ui: %{ model.landing_ui | input_cursor: new_cursor}}
+                    _ ->
+                        model
+                end
+            {:new_remote_connection, event} ->
+                # Take address input
+                model
+            {:reestablish_connection, event} ->
+                # Pick remote address
+                # What happens if the remote address is hosting a connection, but not the same chatroom?
+                model
+            {:new_chatroom, event} ->
+                # Name new chatroom
+                model
+            {:restart_chatroom, event} ->
+                # Pick chatroom to open
+                model
+            _ -> model
+        end
+
+    end
         
 
 end

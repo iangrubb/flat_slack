@@ -29,13 +29,16 @@ defmodule FlatSlackClient.Messenger do
 
     def handle_cast(:establish_connection, state) do
 
-
         # Needs to be given an address, of the format {x, x, x, x}
         address = nil
 
         case :gen_tcp.connect(address, 4040, [:binary, packet: 2, active: true]) do
-            {:ok, socket} ->{:noreply, %{ state | port: socket }}
-            _ -> {:noreply, state}
+            {:ok, socket} ->
+                # Should be made into a call, so that this can both set the port and also change application address state.
+                {:noreply, %{ state | port: socket }}
+            _ ->
+                # Needs to produce an error message to display
+                {:noreply, state}
         end
     end
 

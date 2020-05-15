@@ -1,0 +1,3 @@
+alias FlatSlackClient.ConnectionLog
+
+alias FlatSlackClient.Repo

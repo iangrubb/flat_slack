@@ -2,6 +2,7 @@ defmodule FlatSlackClient do
   use Application
 
   def start(_type, _args) do
+    import Supervisor.Spec, warn: false
 
     # Options for the Ratatouille runtime    
     runtime_opts = [
@@ -11,6 +12,7 @@ defmodule FlatSlackClient do
     ]
 
     children = [
+      FlatSlackClient.Repo,
       {FlatSlackClient.Messenger, name: Messenger},
       {Ratatouille.Runtime.Supervisor, name: Runtime, runtime: runtime_opts}
     ]

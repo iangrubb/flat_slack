@@ -20,6 +20,16 @@ import Config
 
 config :flat_slack_server, FlatSlackServer.Repo,
   adapter: Sqlite.Ecto2,
-  database: "flat_slack_server.sqlite3"
+  database: "flat_slack_server.sqlite3",
+  loggers: []
+  
 
 config :flat_slack_server, ecto_repos: [FlatSlackServer.Repo]
+
+
+config :flat_slack_client, FlatSlackClient.Repo,
+  adapter: Sqlite.Ecto2,
+  database: "flat_slack_client.sqlite3",
+  loggers: []
+
+config :flat_slack_client, ecto_repos: [FlatSlackClient.Repo]
