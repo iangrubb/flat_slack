@@ -62,7 +62,6 @@ defmodule FlatSlackClient.Interface do
                 chatroom_ui: %{message_cursor: 0, message_field: ""}
             },
             Command.new(fn ->
-                ServerRepo.insert(%Chatroom{name: "Beef House"})
                 {ClientRepo.all(ConnectionLog), ServerRepo.all(Chatroom)}
             end, :initialize_client)
         }

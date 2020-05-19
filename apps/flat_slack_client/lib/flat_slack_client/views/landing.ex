@@ -23,20 +23,55 @@ defmodule FlatSlackClient.Views.Landing do
             
                 viewport offset_x: -10, offset_y: -1 do
                     case {remote_port, connection_choice} do
+
                         {nil, :new_remote_connection} -> 
-                            label(content: "Enter port")
-                            # Case for entering address of chatroom you want to connect to
+                            row do
+                                column size: 6 do
+                                    label(content: "Enter the network address of the remote chatroom:")
+                                    label(content: "")
+                                    label(content: input_field <> "▌", wrap: true)
+                                end
+                            end
+                            
                         {nil, :reestablish_connection} ->
-                            label(content: "Select remote chatroom")
+                            row do
+                                column size: 6 do
+                                    label(content: "Select a remote chatroom to attempt to join:")
+                                    label(content: "")
+                                    for {{text, _message}, index} <- Enum.with_index(input_options) do
+                                        front = if index == input_cursor, do: ">" , else: " " 
+                                        label(content: "#{front} #{index + 1}. #{text}") 
+                                    end     
+                                end
+                            end
+
                         {nil, :new_chatroom} -> 
-                            label(content: "Enter chatroom name")
-                            # Case for entering name of chatroom you just created
+
+                            row do
+                                column size: 6 do
+                                    label(content: "Create a name for your new chatroom:")
+                                    label(content: "")
+                                    label(content: input_field <> "▌", wrap: true)
+                                end
+
+                            end
+                            
                         {nil, :restart_chatroom} ->
-                            label(content: "Select local chatroom")
+                            label(content: "Select local chatroom to restart:")
+                            row do
+                                column size: 6 do
+                                    for {{text, _message}, index} <- Enum.with_index(input_options) do
+                                        front = if index == input_cursor, do: ">" , else: " " 
+                                        label(content: "#{front} #{index + 1}. #{text}") 
+                                    end
+                                end
+                            end
+                            
                         {nil, _}  ->
                             row do
                                 column size: 6 do
-
+                                    label(content: "Please select an option to join a chat:")
+                                    label(content: "")
                                     for {{text, _message}, index} <- Enum.with_index(input_options) do
                                         front = if index == input_cursor, do: ">" , else: " " 
                                         label(content: "#{front} #{index + 1}. #{text}") 
