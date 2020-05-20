@@ -1,6 +1,11 @@
 defmodule FlatSlackClient.Updates do
 
+
     alias  Ratatouille.Runtime.Command
+
+    alias FlatSlackServer.ConnectionProvider
+
+    alias FlatSlackClient.Messenger
 
     import Ratatouille.Constants, only: [key: 1]
 
@@ -13,7 +18,7 @@ defmodule FlatSlackClient.Updates do
     def server(model, message) do
         case message do
             %{"type" => "CONNECTION_CONFIRMED"} ->
-                %{model | connected: true}
+                model
             %{"type" => "INITIAL_DATA", "payload" => %{"messages" => messages, "users" => users, "user_id" => user_id}} ->
                 normalized_messages = Enum.map(messages, fn message -> normalize(message) end)
                 normalized_users = Enum.map(users, fn user -> normalize(user) end)
@@ -98,17 +103,18 @@ defmodule FlatSlackClient.Updates do
 
     def landing(model, event) do
 
+        default_ui = %{input_field: "", error_message: "", input_cursor: 0, input_options:
+            [
+            {"Create a New Chatroom", :new_chatroom},
+            {"Restart a Chatroom", :restart_chatroom},
+            {"Connect to New Chatroom", :new_remote_connection},
+            {"Connect to Visited Chatroom", :reestablish_connection}
+            ]
+        }
+
         case {model.connection_choice, event} do
             {_ , %{key: @ctrl_e}} ->
                 # Undo connection_choice and clear fields.
-                default_ui = %{input_field: "", error_message: "", input_cursor: 0, input_options:
-                    [
-                    {"Create a New Chatroom", :new_chatroom},
-                    {"Restart a Chatroom", :restart_chatroom},
-                    {"Connect to New Chatroom", :new_remote_connection},
-                    {"Connect to Visited Chatroom", :reestablish_connection}
-                    ]
-                }
                 %{ model | connection_choice: nil, landing_ui: default_ui}
             {nil, event} ->
                 # Make conncetion_choice
@@ -126,32 +132,73 @@ defmodule FlatSlackClient.Updates do
                         :restart_chatroom ->
                             displayed_chatrooms = 
                                 model.owned_chatrooms
-                                |> Enum.map(fn room -> { room.name, room.name } end)
+                                |> Enum.map(fn room -> { room.name, room.id } end)
                             %{ model | connection_choice: choice, landing_ui: %{ model.landing_ui | input_options: displayed_chatrooms}}
                         _ -> model
                     end
                 end
                 list_select(model, event, select_submenu)
             {:new_remote_connection, event} ->
-                # Take address input
 
+                # Take address input
+                # Send to loading screen, then enter chat or display error
+
+                submit =
+                    fn port_string ->
+                        %{ model | landing_ui: default_ui }
+                    end
 
                 text_field(model, [:landing_ui, :input_field], event, nil, nil)
             {:reestablish_connection, event} ->
+
                 # Pick remote address
                 # What happens if the remote address is hosting a connection, but not the same chatroom?
 
-                # Add callback
+                submit =
+                    fn connection_id ->
+                        %{ model | landing_ui: default_ui }
+                    end
+
                 list_select(model, event, nil)
             {:new_chatroom, event} ->
                 # Name new chatroom
 
+                submit =
+                    fn new_chatroom_name ->
+                        %{ model | landing_ui: default_ui }
+                    end
+
                 text_field(model, [:landing_ui, :input_field], event, nil, nil)
             {:restart_chatroom, event} ->
+
                 # Pick chatroom to open
 
-                # Add callback
-                list_select(model, event, nil)
+                submit =
+                    fn (reset_model, room_id) ->
+                        
+                        # Make the server listen to a socket 
+                        socket = ConnectionProvider.accept(4040, room_id)
+
+                        # Now that listening is confirmed, start up a separate connection providing looping process.
+                        # Task.start(fn -> ConnectionProvider.loop_acceptor(socket, room_id) end)
+                        
+
+                        # Get local ip address.
+                        {:ok, [ {address, _, _} | _remainder ]} = :inet.getif()
+
+
+                        # Start up the messenger. Act differently based on error or connection
+                        case Messenger.establish_connection(address) do
+                            :error ->
+                                # No connection, add error message
+                                %{ reset_model | landing_ui: %{ reset_model.landing_ui | error_message: "Connection Failed"} }
+                            :ok ->
+                                # Add address to state
+                                %{ reset_model | remote_port: address }
+                        end
+                    end
+
+                list_select(model, event, submit)
             _ -> model
         end
     end

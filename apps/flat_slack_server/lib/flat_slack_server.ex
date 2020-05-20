@@ -8,8 +8,7 @@ defmodule FlatSlackServer do
     children = [
       FlatSlackServer.Repo,
       {FlatStackServer.ServerController, name: ServerController},
-      {Task.Supervisor, name: ConnectionSupervisor},
-      {Task, fn -> FlatSlackServer.ConnectionProvider.accept(4040) end}
+      {Task.Supervisor, name: ConnectionSupervisor}
     ]
 
     opts = [strategy: :one_for_one, name: FlatSlackServer.Supervisor]

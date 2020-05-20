@@ -1,17 +1,32 @@
 defmodule FlatSlackServer.ConnectionProvider do
 
     alias FlatStackServer.ServerController
+
+    alias FlatSlackServer.Models.Chatroom
+
+    alias FlatSlackServer.Repo, as: ServerRepo
   
-    def accept(port) do
+    def accept(port, chatroom_id) do
       {:ok, socket} = :gen_tcp.listen(port, [:binary, active: false, packet: 2, reuseaddr: true])
-      loop_acceptor(socket)
+
+      {:ok, pid} = Task.Supervisor.start_child(ConnectionSupervisor, fn -> loop_acceptor(socket, chatroom_id) end)
+      :ok = :gen_tcp.controlling_process(socket, pid)
+
+      socket
     end
   
-    def loop_acceptor(socket) do
+    def loop_acceptor(socket, chatroom_id) do
+
+      # chatroom = ServerRepo.get(Chatroom, chatroom_id)
+
+      # Now this should loop for connections to a specific chatroom.
+
       {:ok, client} = :gen_tcp.accept(socket)
+      
       {:ok, pid} = Task.Supervisor.start_child(ConnectionSupervisor, fn -> initialize_connection(client) end)
       :ok = :gen_tcp.controlling_process(client, pid)
-      loop_acceptor(socket)
+      loop_acceptor(socket, chatroom_id)
+
     end
   
     defp initialize_connection(socket) do

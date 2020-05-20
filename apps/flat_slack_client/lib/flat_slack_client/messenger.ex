@@ -8,8 +8,8 @@ defmodule FlatSlackClient.Messenger do
         GenServer.start_link(__MODULE__, :ok, opts)
     end
 
-    def establish_connection() do
-        GenServer.cast(Messenger, :establish_connection)
+    def establish_connection(address) do
+        GenServer.call(Messenger, {:establish_connection, address})
     end
 
     def get_message() do
@@ -27,18 +27,13 @@ defmodule FlatSlackClient.Messenger do
         {:ok, %{messages: [], port: nil}}
     end
 
-    def handle_cast(:establish_connection, state) do
-
-        # Needs to be given an address, of the format {x, x, x, x}
-        address = nil
-
+    def handle_call({:establish_connection, address}, _from, state) do
         case :gen_tcp.connect(address, 4040, [:binary, packet: 2, active: true]) do
             {:ok, socket} ->
-                # Should be made into a call, so that this can both set the port and also change application address state.
-                {:noreply, %{ state | port: socket }}
+                {:reply, :ok , %{ state | port: socket }}
             _ ->
                 # Needs to produce an error message to display
-                {:noreply, state}
+                {:reply, :error , state}
         end
     end
 

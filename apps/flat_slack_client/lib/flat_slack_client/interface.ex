@@ -32,7 +32,6 @@ defmodule FlatSlackClient.Interface do
     @arrow_down key(:arrow_down)
     @ctrl_e key(:ctrl_e)
 
-
     @special_ui [@arrow_up, @arrow_down, @ctrl_e]
 
     def init(_context) do

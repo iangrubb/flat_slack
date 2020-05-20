@@ -2,11 +2,8 @@ defmodule FlatSlackClient.Views.Landing do
 
     import Ratatouille.View
 
-    def render({width, height}, %{input_field: input_field, input_cursor: input_cursor, input_options: input_options}, remote_port, connection_choice) do
+    def render({width, height}, %{input_field: input_field, input_cursor: input_cursor, input_options: input_options, error_message: error_message}, remote_port, connection_choice) do
        
-        
-
-
         view do
 
             viewport offset_x: -(div((width - 100), 2)) , offset_y: -(div((height - 8), 2)) do
@@ -21,6 +18,8 @@ defmodule FlatSlackClient.Views.Landing do
                 label(content: " \\ \\_\\    \\ \\_____\\  \\ \\_\\ \\_\\    \\ \\_\\        \\/\\_____\\  \\ \\_____\\  \\ \\_\\ \\_\\  \\ \\_____\\  \\ \\_\\ \\_\\ ")
                 label(content: "  \\/_/     \\/_____/   \\/_/\\/_/     \\/_/         \\/_____/   \\/_____/   \\/_/\\/_/   \\/_____/   \\/_/\\/_/ ")
             
+
+
                 viewport offset_x: -10, offset_y: -1 do
                     case {remote_port, connection_choice} do
 
@@ -66,10 +65,14 @@ defmodule FlatSlackClient.Views.Landing do
                                     end
                                 end
                             end
-                            
+
                         {nil, _}  ->
                             row do
                                 column size: 6 do
+
+                                    label(content: "")
+                                    label(content: error_message)
+                                    label(content: "")
                                     label(content: "Please select an option to join a chat:")
                                     label(content: "")
                                     for {{text, _message}, index} <- Enum.with_index(input_options) do
