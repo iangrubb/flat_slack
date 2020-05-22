@@ -179,13 +179,8 @@ defmodule FlatSlackClient.Updates do
                         # Make the server listen to a socket 
                         socket = ConnectionProvider.accept(4040, room_id)
 
-                        # Now that listening is confirmed, start up a separate connection providing looping process.
-                        # Task.start(fn -> ConnectionProvider.loop_acceptor(socket, room_id) end)
-                        
-
                         # Get local ip address.
                         {:ok, [ {address, _, _} | _remainder ]} = :inet.getif()
-
 
                         # Start up the messenger. Act differently based on error or connection
                         case Messenger.establish_connection(address) do
